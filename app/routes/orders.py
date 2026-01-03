@@ -1,13 +1,26 @@
-from app.schemas.order import OrderCreate
-from fastapi import APIRouter
+from app.schemas.order import OrderCreate, OrderRead, OrderPayload
+from app.dependencies.auth import get_current_user
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 
 order_router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-@order_router.post("/", response_model=OrderCreate)
-def create_order(order: OrderCreate):
+@order_router.post("/", response_model=OrderRead)
+def create_order(order: OrderPayload, current_user: dict = Depends(get_current_user)):
+    """
+    Create a new order with product_id=1, price=100, and user_id from authenticated token
+    """
+    user_id = current_user["user_id"]
+    
+    order = OrderCreate(
+        customer_id=user_id,
+        product_id=order.product_id,
+        quantity=order.quantity,
+        price=order.price
+    )
+    
     return order
 
 

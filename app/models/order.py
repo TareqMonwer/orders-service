@@ -5,6 +5,7 @@ from app.models.base import Base
 
 class Order(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(nullable=False)
     customer_id: Mapped[int] = mapped_column(nullable=False)
     product_id: Mapped[int] = mapped_column(nullable=False)
     quantity: Mapped[int] = mapped_column(nullable=False)

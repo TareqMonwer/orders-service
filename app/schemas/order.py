@@ -3,10 +3,16 @@ from typing import Optional
 
 
 class OrderBase(BaseModel):
-    customer_id: int
     product_id: int
     quantity: int
     price: float
 
-class OrderCreate(OrderBase):
+class OrderPayload(OrderBase):
     pass
+
+class OrderCreate(OrderBase):
+    customer_id: int
+
+
+class OrderRead(OrderBase):
+    customer_id: int

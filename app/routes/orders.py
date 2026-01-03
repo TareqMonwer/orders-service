@@ -9,6 +9,7 @@ from app.crud.orders import (
 )
 from app.services.user_service import verify_user_exists
 from app.database import get_db
+from app.middleware.metrics_middleware import ORDERS_CREATED_TOTAL
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -47,6 +48,9 @@ async def create_order(
     
     # Save to database
     db_order = crud_create_order(db=db, order=order_data)
+    
+    # Increment orders created metric
+    ORDERS_CREATED_TOTAL.inc()
     
     return db_order
 

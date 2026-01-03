@@ -17,13 +17,18 @@ REQUEST_DURATION = Histogram(
 )
 
 TOTAL_ACTIVE_REQUESTS = Gauge(
-    "http_active_requests_total", "Total number of active HTTP requests"
+    "http_requests_in_flight", "Total number of in-flight HTTP requests"
 )
 
 TOTAL_PAYMENT_ERRORS = Counter(
     "payment_errors_total",
     "Total number of payment errors",
     ["error_type"],
+)
+
+ORDERS_CREATED_TOTAL = Counter(
+    "orders_created_total",
+    "Total number of orders created",
 )
 
 

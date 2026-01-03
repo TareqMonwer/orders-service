@@ -1,6 +1,12 @@
 from app.schemas.order import OrderCreate, OrderRead, OrderPayload
 from app.dependencies.auth import get_current_user
-from app.crud.orders import create_order as crud_create_order, get_order, get_orders_by_user
+from app.crud.orders import (
+    create_order as crud_create_order, 
+    get_order, 
+    get_orders_by_user,
+    update_order as crud_update_order,
+    delete_order as crud_delete_order
+)
 from app.services.user_service import verify_user_exists
 from app.database import get_db
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -107,11 +113,72 @@ async def get_order_details(
     return order
 
 
-@order_router.put("/{order_id}", response_model=OrderCreate)
-def update_order(order_id: int, order: OrderCreate):
-    return order
+@order_router.put("/{order_id}", response_model=OrderRead)
+async def update_order(
+    order_id: int,
+    order_update: OrderPayload,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update an existing order (only if it belongs to the current user)
+    """
+    user_id = current_user["user_id"]
+    token = current_user.get("token")
+    
+    # Verify user exists in users-service
+    user_exists = await verify_user_exists(user_id, token)
+    if not user_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found in users service"
+        )
+    
+    # Create order update data
+    order_data = OrderCreate(
+        customer_id=user_id,
+        product_id=order_update.product_id,
+        quantity=order_update.quantity,
+        price=order_update.price
+    )
+    
+    # Update order
+    updated_order = crud_update_order(db=db, order_id=order_id, user_id=user_id, order_update=order_data)
+    if not updated_order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found or access denied"
+        )
+    
+    return updated_order
 
 
 @order_router.delete("/{order_id}")
-def delete_order(order_id: int):
-    return {"order_id": order_id}
+async def delete_order(
+    order_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete an order (only if it belongs to the current user)
+    """
+    user_id = current_user["user_id"]
+    token = current_user.get("token")
+    
+    # Verify user exists in users-service
+    user_exists = await verify_user_exists(user_id, token)
+    if not user_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found in users service"
+        )
+    
+    # Delete order
+    deleted = crud_delete_order(db=db, order_id=order_id, user_id=user_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found or access denied"
+        )
+    
+    return {"message": "Order deleted successfully"}

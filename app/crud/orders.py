@@ -33,8 +33,32 @@ def get_orders_by_user(db: Session, user_id: int) -> list[Order]:
     return db.query(Order).filter(Order.customer_id == user_id).all()
 
 
-def get_all_orders(db: Session) -> list[Order]:
+def update_order(db: Session, order_id: int, user_id: int, order_update: OrderCreate) -> Order:
     """
-    Get all orders
+    Update an order (only if it belongs to the user)
     """
-    return db.query(Order).all()
+    db_order = db.query(Order).filter(Order.id == order_id, Order.customer_id == user_id).first()
+    if not db_order:
+        return None
+    
+    db_order.product_id = order_update.product_id
+    db_order.quantity = order_update.quantity
+    db_order.price = order_update.price
+    db_order.customer_id = order_update.customer_id
+    
+    db.commit()
+    db.refresh(db_order)
+    return db_order
+
+
+def delete_order(db: Session, order_id: int, user_id: int) -> bool:
+    """
+    Delete an order (only if it belongs to the user)
+    """
+    db_order = db.query(Order).filter(Order.id == order_id, Order.customer_id == user_id).first()
+    if not db_order:
+        return False
+    
+    db.delete(db_order)
+    db.commit()
+    return True

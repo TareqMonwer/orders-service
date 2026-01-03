@@ -22,7 +22,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        return {"user_id": int(user_id)}
+        return {
+            "user_id": int(user_id),
+            "token": token  # Include the raw token for secure API calls
+        }
     
     except jwt.ExpiredSignatureError:
         raise HTTPException(

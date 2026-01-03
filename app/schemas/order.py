@@ -15,4 +15,5 @@ class OrderCreate(OrderBase):
 
 
 class OrderRead(OrderBase):
+    id: int
     customer_id: int

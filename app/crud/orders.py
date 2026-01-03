@@ -28,9 +28,9 @@ def get_order(db: Session, order_id: int) -> Order:
 
 def get_orders_by_user(db: Session, user_id: int) -> list[Order]:
     """
-    Get all orders for a specific user
+    Get all orders for a specific user (using customer_id as user identifier)
     """
-    return db.query(Order).filter(Order.user_id == user_id).all()
+    return db.query(Order).filter(Order.customer_id == user_id).all()
 
 
 def get_all_orders(db: Session) -> list[Order]:

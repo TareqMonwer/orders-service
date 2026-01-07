@@ -1,4 +1,4 @@
-from app.schemas.order import OrderCreate, OrderRead, OrderPayload
+from app.schemas.order import OrderCreate, OrderRead, OrderPayload, OrderUpdate
 from app.dependencies.auth import get_current_user
 from app.crud.orders import (
     create_order as crud_create_order, 
@@ -43,7 +43,8 @@ async def create_order(
         customer_id=user_id,
         product_id=order.product_id,
         quantity=order.quantity,
-        price=order.price
+        price=order.price,
+        status=order.status or "pending"
     )
     
     # Save to database
@@ -120,12 +121,13 @@ async def get_order_details(
 @order_router.put("/{order_id}", response_model=OrderRead)
 async def update_order(
     order_id: int,
-    order_update: OrderPayload,
+    order_update: OrderUpdate,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Update an existing order (only if it belongs to the current user)
+    Partial updates are supported - only provided fields will be updated
     """
     user_id = current_user["user_id"]
     token = current_user.get("token")
@@ -138,16 +140,8 @@ async def update_order(
             detail="User not found in users service"
         )
     
-    # Create order update data
-    order_data = OrderCreate(
-        customer_id=user_id,
-        product_id=order_update.product_id,
-        quantity=order_update.quantity,
-        price=order_update.price
-    )
-    
-    # Update order
-    updated_order = crud_update_order(db=db, order_id=order_id, user_id=user_id, order_update=order_data)
+    # Update order (partial update)
+    updated_order = crud_update_order(db=db, order_id=order_id, user_id=user_id, order_update=order_update)
     if not updated_order:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

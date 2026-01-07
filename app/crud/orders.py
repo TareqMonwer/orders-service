@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.order import Order
-from app.schemas.order import OrderCreate, OrderRead
+from app.schemas.order import OrderCreate, OrderRead, OrderUpdate
 
 
 def create_order(db: Session, order: OrderCreate) -> Order:
@@ -11,7 +11,8 @@ def create_order(db: Session, order: OrderCreate) -> Order:
         customer_id=order.customer_id,
         product_id=order.product_id,
         quantity=order.quantity,
-        price=order.price
+        price=order.price,
+        status=order.status or "pending"
     )
     db.add(db_order)
     db.commit()
@@ -33,7 +34,7 @@ def get_orders_by_user(db: Session, user_id: int) -> list[Order]:
     return db.query(Order).filter(Order.customer_id == user_id).all()
 
 
-def update_order(db: Session, order_id: int, user_id: int, order_update: OrderCreate) -> Order:
+def update_order(db: Session, order_id: int, user_id: int, order_update: OrderUpdate) -> Order:
     """
     Update an order (only if it belongs to the user)
     """
@@ -41,10 +42,11 @@ def update_order(db: Session, order_id: int, user_id: int, order_update: OrderCr
     if not db_order:
         return None
     
-    db_order.product_id = order_update.product_id
-    db_order.quantity = order_update.quantity
-    db_order.price = order_update.price
-    db_order.customer_id = order_update.customer_id
+    # Update only provided fields
+    update_data = order_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        if value is not None:
+            setattr(db_order, field, value)
     
     db.commit()
     db.refresh(db_order)
